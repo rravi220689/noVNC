@@ -1,24 +1,100 @@
 ﻿/* ====================================================================
-   noVNC Sidebar Integrated Enhancements Stylesheet
-   Zero screen clutter - all controls in left sidebar
+   noVNC Mobile-Optimized Touch, Mouse & Virtual Keyboard Stylesheet
    ==================================================================== */
 
-/* --- On-Screen Virtual Keyboard (Docked at Bottom, Off by Default) --- */
+/* --- Mobile Quick Pointer & Mouse Helper Toolbar (Mobile View Only) --- */
+#vnc_mobile_pointer_bar {
+    position: fixed;
+    top: 10px;
+    right: 12px;
+    z-index: 9500;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(22, 25, 32, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 24px;
+    padding: 4px 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    transition: opacity 0.2s, transform 0.2s;
+}
+
+.mobile-bar-btn {
+    background: rgba(255, 255, 255, 0.08);
+    color: #e8eaed;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 5px 9px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 30px;
+    min-width: 32px;
+    box-sizing: border-box;
+    transition: all 0.12s ease;
+}
+
+.mobile-bar-btn:active, .mobile-bar-btn.active {
+    background: #1a73e8 !important;
+    border-color: #1a73e8 !important;
+    color: #fff !important;
+    transform: scale(0.94);
+}
+
+.mobile-bar-btn.primary {
+    background: #1a73e8;
+    border-color: #1a73e8;
+    color: #fff;
+}
+
+.mobile-bar-divider {
+    width: 1px;
+    height: 18px;
+    background: rgba(255, 255, 255, 0.15);
+    margin: 0 2px;
+}
+
+/* --- Virtual Mouse Pointer Cursor Dot (Trackpad Mode) --- */
+#vnc_enh_virtual_cursor {
+    position: fixed;
+    width: 22px;
+    height: 22px;
+    border: 2px solid #ffffff;
+    background: rgba(26, 115, 232, 0.5);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 8000;
+    display: none;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 12px rgba(26, 115, 232, 0.9), inset 0 0 4px #fff;
+    transition: transform 0.05s ease-out;
+}
+
+/* --- On-Screen Virtual Keyboard (Docked at Bottom) --- */
 #vnc_enh_vkeyboard {
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
     z-index: 9000;
-    background: rgba(18, 20, 26, 0.96);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    background: rgba(18, 20, 26, 0.97);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
     border-top: 2px solid rgba(255, 255, 255, 0.15);
-    padding: 8px 10px calc(env(safe-area-inset-bottom, 8px) + 8px) 10px;
+    padding: 6px 6px calc(env(safe-area-inset-bottom, 8px) + 6px) 6px;
     box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.7);
     display: none;
     flex-direction: column;
-    gap: 5px;
+    gap: 4px;
     user-select: none;
     -webkit-user-select: none;
     animation: vncSlideUp 0.2s ease-out forwards;
@@ -37,13 +113,13 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0 4px 4px 4px;
+    padding: 0 4px 3px 4px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .vkeyboard-title {
     color: #9aa0a6;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 600;
     letter-spacing: 0.5px;
     text-transform: uppercase;
@@ -53,10 +129,10 @@
     background: rgba(255, 255, 255, 0.1);
     border: none;
     color: #e8eaed;
-    font-size: 16px;
+    font-size: 15px;
     font-weight: bold;
     cursor: pointer;
-    padding: 3px 12px;
+    padding: 2px 10px;
     border-radius: 6px;
     transition: background 0.15s;
 }
@@ -68,7 +144,7 @@
 .vkeyboard-row {
     display: flex;
     justify-content: center;
-    gap: 4px;
+    gap: 3px;
     width: 100%;
 }
 
@@ -79,16 +155,16 @@
     background: #2b303c;
     color: #f1f3f4;
     border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 6px;
-    font-size: 14px;
+    border-radius: 5px;
+    font-size: 13px;
     font-weight: 500;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     touch-action: manipulation;
-    transition: background 0.1s, transform 0.08s;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+    transition: background 0.08s, transform 0.06s;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
@@ -181,9 +257,13 @@
     background-color: #1557b0 !important;
 }
 
+/* Mobile Screen Responsive Adaptations */
 @media (max-width: 768px) {
     .vkey {
-        height: 36px;
-        font-size: 13px;
+        height: 34px;
+        font-size: 12px;
+    }
+    .noVNC_panel {
+        max-width: calc(100vw - 40px) !important;
     }
 }
