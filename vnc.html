@@ -129,6 +129,33 @@
                 title="Move/Drag viewport">
 
             <!--noVNC touch device only buttons-->
+                        <!-- Touch & Mouse Pointer Mode Selector -->
+            <input type="image" alt="Pointer Mode" src="app/images/drag.svg"
+                   id="noVNC_pointer_mode_button" class="noVNC_button" title="Touch & Mouse Pointer Modes">
+            <div class="noVNC_crosscenter">
+            <div id="noVNC_pointer_mode_panel" class="noVNC_panel">
+                <div class="noVNC_heading">
+                    <img alt="" src="app/images/drag.svg"> Touch & Mouse Mode
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px;">
+                    <div style="display: flex; gap: 6px;">
+                        <input type="button" id="btn_mode_touch" class="noVNC_enh_btn primary" value="📱 Direct Touch" style="flex: 1;" title="Tap directly on screen">
+                        <input type="button" id="btn_mode_trackpad" class="noVNC_enh_btn" value="🖱️ Trackpad / Mouse" style="flex: 1;" title="Move virtual mouse cursor">
+                    </div>
+                    <p class="noVNC_subheading" style="margin: 2px 0;">Mouse Actions:</p>
+                    <div style="display: flex; gap: 6px;">
+                        <input type="button" id="btn_click_left" class="noVNC_enh_btn" value="Left Click" style="flex: 1;" title="Send Left Click">
+                        <input type="button" id="btn_click_right" class="noVNC_enh_btn" value="Right Click" style="flex: 1;" title="Send Right Click (Context Menu)">
+                        <input type="button" id="btn_click_middle" class="noVNC_enh_btn" value="Middle" style="flex: 0.8;" title="Send Middle Click">
+                    </div>
+                    <div style="display: flex; gap: 6px;">
+                        <input type="button" id="btn_wheel_up" class="noVNC_enh_btn" value="▲ Scroll Up" style="flex: 1;" title="Scroll Mouse Wheel Up">
+                        <input type="button" id="btn_wheel_down" class="noVNC_enh_btn" value="▼ Scroll Down" style="flex: 1;" title="Scroll Mouse Wheel Down">
+                        <input type="button" id="btn_drag_lock" class="noVNC_enh_btn" value="🔒 Drag Lock" style="flex: 1;" title="Hold Left Mouse Button to drag">
+                    </div>
+                </div>
+            </div>
+            </div>
             <!-- Touch Mobile Soft Keyboard -->
             <input type="image" alt="Keyboard" src="app/images/keyboard.svg"
                    id="noVNC_keyboard_button" class="noVNC_button" title="Show mobile keyboard">

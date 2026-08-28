@@ -1,6 +1,10 @@
 /**
  * noVNC Sidebar Integrated Enhancements Module
- * Features: Sidebar Clipboard Actions, On-Screen Virtual Keyboard, Mobile Soft Keyboard Support
+ * Features:
+ *  - Touch & Mouse / Trackpad Mode Selector
+ *  - Left / Right / Middle Click & Scroll Wheel Controls
+ *  - Sidebar Clipboard Actions (Quick Paste, Quick Copy, Type to Remote)
+ *  - On-Screen Virtual Keyboard & Mobile Soft Keyboard Support
  * Copyright (c) 2026 rravi220689
  */
 
@@ -14,6 +18,11 @@ class NoVNCSidebarEnhancements {
             shift: false,
             win: false
         };
+        this.pointerMode = "touch"; // 'touch' (direct) or 'trackpad' (relative mouse)
+        this.rightClickNext = false;
+        this.dragLock = false;
+        this.virtualMousePos = { x: 400, y: 300 };
+        this.lastTouchPos = null;
         this.toastTimeout = null;
         this.init();
     }
@@ -28,7 +37,7 @@ class NoVNCSidebarEnhancements {
     }
 
     setup() {
-        // 1. Create Toast Container
+        // 1. Toast Container
         if (!document.getElementById("vnc_enh_toast")) {
             const toast = document.createElement("div");
             toast.id = "vnc_enh_toast";
@@ -36,16 +45,25 @@ class NoVNCSidebarEnhancements {
             document.body.appendChild(toast);
         }
 
-        // 2. Create Virtual Keyboard Overlay (hidden until triggered from sidebar)
+        // 2. Trackpad Virtual Cursor Indicator
+        if (!document.getElementById("vnc_enh_virtual_cursor")) {
+            const cursor = document.createElement("div");
+            cursor.id = "vnc_enh_virtual_cursor";
+            cursor.style.cssText = "position:fixed; width:18px; height:18px; border:2px solid #0084ff; background:rgba(0,132,255,0.3); border-radius:50%; pointer-events:none; z-index:8000; display:none; transform:translate(-50%, -50%); transition:opacity 0.2s;";
+            document.body.appendChild(cursor);
+        }
+
+        // 3. Create Virtual Keyboard Overlay (hidden until triggered from sidebar)
         this.injectVirtualKeyboard();
 
-        // 3. Create Mobile Native Soft Keyboard Capture Input
+        // 4. Create Mobile Native Soft Keyboard Capture Input
         this.injectMobileCaptureInput();
 
-        // 4. Attach Sidebar Button Handlers
+        // 5. Attach Sidebar Button Handlers & Pointer Handlers
         this.attachSidebarHandlers();
+        this.setupTrackpadTouchHandlers();
 
-        console.log("[noVNC Sidebar Enhancements] Successfully loaded and attached to sidebar.");
+        console.log("[noVNC Sidebar Enhancements] Successfully loaded (Touch & Mouse selectable).");
     }
 
     injectVirtualKeyboard() {
@@ -195,7 +213,97 @@ class NoVNCSidebarEnhancements {
     }
 
     attachSidebarHandlers() {
-        // 1. Sidebar Virtual Keyboard Toggle Button
+        // --- 1. Touch & Mouse Pointer Mode Toggle ---
+        const pointerBtn = document.getElementById("noVNC_pointer_mode_button");
+        const pointerPanel = document.getElementById("noVNC_pointer_mode_panel");
+        if (pointerBtn && pointerPanel) {
+            pointerBtn.addEventListener("click", () => {
+                const isOpen = pointerPanel.classList.contains("noVNC_open");
+                document.querySelectorAll(".noVNC_panel").forEach(p => p.classList.remove("noVNC_open"));
+                if (!isOpen) {
+                    pointerPanel.classList.add("noVNC_open");
+                }
+            });
+        }
+
+        // Mode Switchers: Touch vs Trackpad
+        const btnTouch = document.getElementById("btn_mode_touch");
+        const btnTrackpad = document.getElementById("btn_mode_trackpad");
+        const cursorEl = document.getElementById("vnc_enh_virtual_cursor");
+
+        if (btnTouch && btnTrackpad) {
+            btnTouch.addEventListener("click", () => {
+                this.pointerMode = "touch";
+                btnTouch.classList.add("primary");
+                btnTrackpad.classList.remove("primary");
+                if (cursorEl) cursorEl.style.display = "none";
+                this.showToast("📱 Direct Touch Mode Activated", "📱");
+            });
+
+            btnTrackpad.addEventListener("click", () => {
+                this.pointerMode = "trackpad";
+                btnTrackpad.classList.add("primary");
+                btnTouch.classList.remove("primary");
+                if (cursorEl) cursorEl.style.display = "block";
+                this.showToast("🖱️ Trackpad / Mouse Cursor Mode Activated", "🖱️");
+            });
+        }
+
+        // Mouse Action Buttons
+        const btnLeft = document.getElementById("btn_click_left");
+        const btnRight = document.getElementById("btn_click_right");
+        const btnMiddle = document.getElementById("btn_click_middle");
+        const btnWheelUp = document.getElementById("btn_wheel_up");
+        const btnWheelDown = document.getElementById("btn_wheel_down");
+        const btnDragLock = document.getElementById("btn_drag_lock");
+
+        if (btnLeft) {
+            btnLeft.addEventListener("click", () => {
+                this.sendMouseClick(1);
+                this.showToast("Left Click", "🖱️");
+            });
+        }
+
+        if (btnRight) {
+            btnRight.addEventListener("click", () => {
+                this.rightClickNext = !this.rightClickNext;
+                btnRight.classList.toggle("primary", this.rightClickNext);
+                this.showToast(this.rightClickNext ? "Right Click Ready (Tap screen)" : "Right Click Cancelled", "🖱️");
+            });
+        }
+
+        if (btnMiddle) {
+            btnMiddle.addEventListener("click", () => {
+                this.sendMouseClick(2);
+                this.showToast("Middle Click", "🖱️");
+            });
+        }
+
+        if (btnWheelUp) {
+            btnWheelUp.addEventListener("click", () => {
+                this.sendMouseWheel(-1);
+            });
+        }
+
+        if (btnWheelDown) {
+            btnWheelDown.addEventListener("click", () => {
+                this.sendMouseWheel(1);
+            });
+        }
+
+        if (btnDragLock) {
+            btnDragLock.addEventListener("click", () => {
+                this.dragLock = !this.dragLock;
+                btnDragLock.classList.toggle("primary", this.dragLock);
+                if (UI.rfb) {
+                    const mask = this.dragLock ? 0x1 : 0x0;
+                    UI.rfb._sendMouse(this.virtualMousePos.x, this.virtualMousePos.y, mask);
+                }
+                this.showToast(this.dragLock ? "🔒 Drag Locked (Left Button Held)" : "🔓 Drag Released", "🔒");
+            });
+        }
+
+        // --- 2. Virtual Keyboard Toggle Button ---
         const vkeyBtn = document.getElementById("noVNC_vkey_button");
         if (vkeyBtn) {
             vkeyBtn.addEventListener("click", () => {
@@ -209,7 +317,7 @@ class NoVNCSidebarEnhancements {
             });
         }
 
-        // 2. Mobile Soft Keyboard Button
+        // --- 3. Mobile Soft Keyboard Button ---
         const mobileKeyBtn = document.getElementById("noVNC_keyboard_button");
         if (mobileKeyBtn) {
             mobileKeyBtn.addEventListener("click", () => {
@@ -221,19 +329,17 @@ class NoVNCSidebarEnhancements {
             });
         }
 
-        // 3. Quick Paste Button (inside Sidebar Clipboard Panel)
+        // --- 4. Sidebar Clipboard Buttons ---
         const qPasteBtn = document.getElementById("noVNC_quick_paste_button");
         if (qPasteBtn) {
             qPasteBtn.addEventListener("click", () => this.handleQuickPaste());
         }
 
-        // 4. Quick Copy Button (inside Sidebar Clipboard Panel)
         const qCopyBtn = document.getElementById("noVNC_quick_copy_button");
         if (qCopyBtn) {
             qCopyBtn.addEventListener("click", () => this.handleQuickCopy());
         }
 
-        // 5. Send Text as Keystrokes (inside Sidebar Clipboard Panel)
         const sendTextBtn = document.getElementById("noVNC_send_text_button");
         if (sendTextBtn) {
             sendTextBtn.addEventListener("click", () => {
@@ -247,7 +353,6 @@ class NoVNCSidebarEnhancements {
             });
         }
 
-        // 6. Paste Local Device Clipboard into Textarea
         const pasteLocalBtn = document.getElementById("noVNC_paste_local_button");
         if (pasteLocalBtn) {
             pasteLocalBtn.addEventListener("click", async () => {
@@ -265,7 +370,6 @@ class NoVNCSidebarEnhancements {
             });
         }
 
-        // 7. Clear Clipboard Button
         const clearBtn = document.getElementById("noVNC_clipboard_clear_button");
         if (clearBtn) {
             clearBtn.addEventListener("click", () => {
@@ -273,6 +377,86 @@ class NoVNCSidebarEnhancements {
                 if (area) area.value = "";
             });
         }
+    }
+
+    /* --- Trackpad / Relative Mouse Touch Listeners --- */
+    setupTrackpadTouchHandlers() {
+        const container = document.getElementById("noVNC_container") || document.body;
+        const cursorEl = document.getElementById("vnc_enh_virtual_cursor");
+
+        container.addEventListener("touchstart", (e) => {
+            if (this.pointerMode !== "trackpad" || !UI.rfb) return;
+            if (e.touches.length === 1) {
+                this.lastTouchPos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            }
+        }, { passive: false });
+
+        container.addEventListener("touchmove", (e) => {
+            if (this.pointerMode !== "trackpad" || !UI.rfb || !this.lastTouchPos) return;
+
+            if (e.touches.length === 1) {
+                e.preventDefault();
+                const touch = e.touches[0];
+                const dx = (touch.clientX - this.lastTouchPos.x) * 1.5;
+                const dy = (touch.clientY - this.lastTouchPos.y) * 1.5;
+
+                this.virtualMousePos.x = Math.max(0, this.virtualMousePos.x + dx);
+                this.virtualMousePos.y = Math.max(0, this.virtualMousePos.y + dy);
+                this.lastTouchPos = { x: touch.clientX, y: touch.clientY };
+
+                // Update on-screen cursor
+                if (cursorEl) {
+                    cursorEl.style.left = touch.clientX + "px";
+                    cursorEl.style.top = touch.clientY + "px";
+                }
+
+                // Send VNC mouse movement
+                const mask = this.dragLock ? 0x1 : 0x0;
+                UI.rfb._sendMouse(Math.round(this.virtualMousePos.x), Math.round(this.virtualMousePos.y), mask);
+            }
+        }, { passive: false });
+
+        container.addEventListener("touchend", (e) => {
+            if (this.pointerMode !== "trackpad" || !UI.rfb) return;
+            this.lastTouchPos = null;
+
+            if (this.rightClickNext) {
+                this.sendMouseClick(4);
+                this.rightClickNext = false;
+                const btnRight = document.getElementById("btn_click_right");
+                if (btnRight) btnRight.classList.remove("primary");
+                this.showToast("Right Click Performed", "🖱️");
+            }
+        });
+    }
+
+    sendMouseClick(buttonNum) {
+        if (!UI.rfb) return;
+        let mask = 0x1;
+        if (buttonNum === 2) mask = 0x2; // Middle
+        if (buttonNum === 4) mask = 0x4; // Right
+
+        const x = Math.round(this.virtualMousePos.x);
+        const y = Math.round(this.virtualMousePos.y);
+
+        UI.rfb._sendMouse(x, y, mask);
+        setTimeout(() => {
+            const releaseMask = this.dragLock ? 0x1 : 0x0;
+            UI.rfb._sendMouse(x, y, releaseMask);
+        }, 50);
+    }
+
+    sendMouseWheel(direction) {
+        if (!UI.rfb) return;
+        const x = Math.round(this.virtualMousePos.x);
+        const y = Math.round(this.virtualMousePos.y);
+        const mask = direction < 0 ? 0x8 : 0x10; // 0x8 = Wheel Up, 0x10 = Wheel Down
+
+        UI.rfb._sendMouse(x, y, mask);
+        setTimeout(() => {
+            UI.rfb._sendMouse(x, y, 0x0);
+        }, 40);
+        this.showToast(direction < 0 ? "▲ Scroll Up" : "▼ Scroll Down", "📜");
     }
 
     /* --- Modifier Handling --- */
@@ -404,12 +588,10 @@ class NoVNCSidebarEnhancements {
                 return;
             }
 
-            // Set remote clipboard
             UI.rfb.clipboardPasteFrom(text);
             const area = document.getElementById("noVNC_clipboard_text");
             if (area) area.value = text;
 
-            // Trigger Ctrl+V
             UI.rfb.sendKey(0xffe3, "ControlLeft", true);
             setTimeout(() => {
                 UI.rfb.sendKey(0x0076, "KeyV", true);
@@ -422,7 +604,6 @@ class NoVNCSidebarEnhancements {
 
         } catch (err) {
             console.warn("[noVNC] Async Clipboard read failed:", err);
-            // Fallback: Open sidebar clipboard panel
             const clipBtn = document.getElementById("noVNC_clipboard_button");
             if (clipBtn) clipBtn.click();
             this.showToast("Paste text into sidebar box", "📋");
@@ -432,7 +613,6 @@ class NoVNCSidebarEnhancements {
     handleQuickCopy() {
         if (!UI.rfb) return;
 
-        // Trigger Ctrl+C on remote
         UI.rfb.sendKey(0xffe3, "ControlLeft", true);
         setTimeout(() => {
             UI.rfb.sendKey(0x0063, "KeyC", true);
